@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World ?-?</title>
+    <style>
+        /* Basic Styling */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: black;
+        }
+
+        #gameCanvas {
+            background-image: url("asssets/bg.png");
+            display: block;
+            margin: 0 auto;
+            border: 1px solid black;
+        }
+
+        .player {
+            width: 32px;
+            height: 32px;
+            background-color: red; /* Placeholder for player */
+            position: absolute;
+            bottom: 50px; /* Start on the ground */
+            left: 100px; /* Starting position */
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="1000" height="600"></canvas>
+
+    <script>
+        // Get the canvas and context
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+
+        //loongi asset
+        const loongiv2 = new Image()
+        loongiv2.src = "asssets/Untitled.png"
+
+        // Player properties 
+        //ok shits done lmfao
+        const player = {
+            x: 100,
+            y: canvas.height - 100, // Ground level
+            width: 64,
+            height: 128,
+            speed: 5,
+            dx: 0,
+            dy: 0,
+            gravity: 0.5,
+            jumpStrength: -10,
+            grounded: true,
+            image: loongiv2,
+        };
+
+        //static asset
+        const staticAsset = new Image()
+        staticAsset.src ="asssets/very scary.png"
+
+        //static properties
+        const static = {
+            x:800,
+            y: canvas.height - 800,
+            width: 300,
+            height:800,
+            image:staticAsset,
+        }
+
+        // Keyboard input
+        const keys = {
+            right: false,
+            left: false,
+            space: false
+        };
+
+        window.addEventListener("keydown", (e) => {
+    if (e.key === "d" || e.key === "D") keys.right = true;
+    if (e.key === "a" || e.key === "A") keys.left = true;
+    if (e.key === "w" || e.key === "W") keys.up = true;
+    if (e.key === "s" || e.key === "S") keys.down = true;
+});
+
+window.addEventListener("keyup", (e) => {
+    if (e.key === "d" || e.key === "D") keys.right = false;
+    if (e.key === "a" || e.key === "A") keys.left = false;
+    if (e.key === "w" || e.key === "W") keys.up = false;
+    if (e.key === "s" || e.key === "S") keys.down = false;
+});
+
+// Collision detection function
+function isColliding(a, b) {
+    return (
+        a.x < b.x + b.width &&
+        a.x + a.width > b.x &&
+        a.y < b.y + b.height &&
+        a.y + a.height > b.y
+    );
+}
+function DrawStatic() {
+    ctx.drawImage(static.image, static.x, static.y, static.width, static.height)
+}
+
+
+        // Update player position based on input
+        function updatePlayer() {
+            // Horizontal movement
+            if (keys.right) player.dx = player.speed;
+            else if (keys.left) player.dx = -player.speed;
+            else player.dx = 0;
+
+            // Vertical movement (gravity and jumping)
+            if (keys.up && player.grounded) {
+                player.dy = player.jumpStrength;
+                player.grounded = false;
+            }
+            player.dy += player.gravity;
+
+            player.x += player.dx;
+            player.y += player.dy;
+
+            // Ground collision detection
+            if (player.y > 500 - player.height) {
+                player.y = 500 - player.height;
+                player.dy = 0;
+                player.grounded = true;
+            }
+            //crouching
+            if (keys.down) {
+                player.height = 32;
+                player.speed = 2.5;
+            } else {
+                player.height = 120;
+                player.speed = 5;
+            }
+
+            // Edge of the canvas boundaries
+            if (player.x < 0) player.x = 0;
+            if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
+        }
+
+        // Draw player on canvas
+        function drawPlayer() {
+            ctx.drawImage(player.image, player.x, player.y, player.width, player.height);
+        }
+        // draw powerup test (will remove later but for now it exists)
+        function drawPowerup() {
+            ctx.fillStyle = "blue";
+            ctx.fillRect(powerup.x, powerup.y, powerup.width, powerup.height)
+        }
+        // draw ugly mx
+        function drawthestupidmoron(){
+            ctx.drawImage(mx.image, mx.x, mx.y, mx.width, mx.height)
+        }
+
+        // Game loop
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+            updatePlayer();
+            drawPlayer();
+            DrawStatic();
+            if(isColliding(player, static)){
+                window.location.href = "titlescreen.html"
+            }
+            requestAnimationFrame(gameLoop); // Keep the game loop running
+        }
+
+        gameLoop(); // Start the game loop
+    </script>
+</body>
+</html>

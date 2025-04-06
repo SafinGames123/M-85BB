@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1</title>
+    <style>
+        /* Basic Styling */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: rgb(0, 0, 0);
+        }
+
+        #gameCanvas {
+            background-color: #87CEEB; /* Sky blue */
+            display: block;
+            margin: 0 auto;
+            border: 1px solid black;
+        }
+
+        .player {
+            width: 32px;
+            height: 32px;
+            background-color: red; /* Placeholder for player */
+            position: absolute;
+            bottom: 50px; /* Start on the ground */
+            left: 100px; /* Starting position */
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="1280" height="720"></canvas>
+
+    <script>
+        //Crazy? I was crazy once. They locked me in a room. A rubber room. a rubber room with rats. rats make me crazy. Crazy? I was crazy once. They locked me in a room. A rubber room. a rubber room with rats. rats make me crazy. Crazy? I was crazy once. They locked me in a room. A rubber room. a rubber room with rats. rats make me crazy. Crazy? I was crazy once. They locked me in a room. A rubber room. a rubber room with rats. rats make me crazy.
+        // Get the canvas and context
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const levelWidth = 10000; // Total level width
+        const camera = {
+            x: 0,  // Camera x position
+            y: 0,  // Camera y position
+            width: canvas.width, // Canvas width
+            height: canvas.height, // Canvas height
+        };
+
+// Chase sequence v2 because Да (Yes)
+        const memeImg1 = new Image();
+        memeImg1.src = "asssets/memes_chase/sadgie.png";
+
+        const memeImg2 = new Image();
+        memeImg2.src = "asssets/memes_chase/42ya6t.jpg";
+
+        const memeImg3 = new Image();
+        memeImg3.src = "asssets/memes_chase/66ea841b4caa0_hilarious-funny-random-memes-life-pics.jpg";
+
+        const memeImg4 = new Image();
+        memeImg4.src = "asssets/memes_chase/g45qasdqaaaa.jpg";
+
+        const memeImg5 = new Image();
+        memeImg5.src = "asssets/memes_chase/programmerhumor-io-programming-memes-a65b37850466f28.jpg";
+
+        const memeImg6 = new Image();  // Fixed: memeImg6 should be its own variable
+        memeImg6.src = "asssets/memes_chase/rate-my-dog-v0-0dxh54168xpe1.jpg";
+
+        const memes = [
+            { img: new Image(), src: "asssets/memes_chase/sadgie.png", x: 8600, y: 200, width: 64, height: 64 },
+            { img: new Image(), src: "asssets/memes_chase/42ya6t.jpg", x: 7320, y: 220, width: 64, height: 64 },
+            { img: new Image(), src: "asssets/memes_chase/66ea841b4caa0_hilarious-funny-random-memes-life-pics", x: 6230, y: 250, width: 64, height: 64 },
+            { img: new Image(), src: "asssets/memes_chase/g45qasdqaaaa.jpg", x: 5500, y: 200, width: 64, height: 64 },
+            { img: new Image(), src: "asssets/memes_chase/programmerhumor-io-programming-memes-a65b37850466f28.jpg", x: 3220, y: 220, width: 64, height: 64 },
+            { img: new Image(), src: "asssets/memes_chase/rate-my-dog-v0-0dxh54168xpe1", x: 1440, y: 250, width: 64, height: 64 },
+        ];
+
+
+
+// Draw memes on canvas
+function drawMemes(ctx) {
+    memes.forEach(meme => {
+        ctx.drawImage(meme.img, meme.x, meme.y, meme.width, meme.height);
+    });
+}
+
+// Meme collision detection
+function checkMemeCollisions() {
+    for (let i = 0; i < memes.length; i++) {
+        const meme = memes[i];
+        if (isColliding(player, meme)) {
+            // If player is falling and lands on a meme
+            if (player.dy > 0 && player.y + player.height - player.dy <= meme.y) {
+                player.y = meme.y - player.height; // Land on top
+                player.dy = 0;
+                player.grounded = true;
+            }
+            // If the player hits a meme from the right side
+            else if (player.dx > 0 && player.x + player.width > meme.x && player.x < meme.x + meme.width) {
+                player.x = meme.x - player.width; // Stop movement
+                player.dx = 0;
+            }
+            // If the player hits a meme from the left side
+            else if (player.dx < 0 && player.x < meme.x + meme.width && player.x + player.width > meme.x) {
+                player.x = meme.x + meme.width; // Stop movement
+                player.dx = 0;
+            }
+            // If the player hits the bottom of the meme (Undertale reference lol)
+            else if (player.dy < 0 && player.y <= meme.y + meme.height &&
+                player.x + player.width > meme.x && player.x < meme.x + meme.width) {
+                player.y = meme.y + meme.height; // Push player down to prevent clipping
+                player.dy = 0; // Stop upward movement
+            }
+        }
+    }
+}
+
+        
+        // ~OwO~ blocks!!!!!!!!!!!!!!!!!!!!!!!11!!!1
+        const blockImg = new Image();
+        blockImg.src = "asssets/bricky.png";
+
+        const blocks = [
+            { x: 200, y: canvas.height - 150, width: 32, height: 32 }, // Block 1
+            { x: 400, y: canvas.height - 150, width: 32, height: 32 }, // Block 2
+            { x: 600, y: canvas.height - 200, width: 32, height: 32 }, // Block 3
+            { x: 1000, y: canvas.height - 64, width: 32, height: 32 }, // Block 4
+            { x: 1000, y: canvas.height - 96, width: 32, height: 32 }, // Block 5 pillar 1
+            { x: 4000, y: canvas.height - 500, width: 500, height: 32}, // werid roof thingy :3
+            { x: 9192, y: canvas.height - 64, width: 32, height: 32},
+            { x: 9192, y: canvas.height - 96, width: 32, height: 32},
+            { x: 9192, y: canvas.height - 128, width: 32, height: 32},
+        ];
+
+        const staircaseX = 9000;  // Where the staircase starts
+        const staircaseY = canvas.height - 64;  // Ground level
+        const stepSize = 32;
+        const steps = 6  // Number of steps
+
+        for (let i = 0; i < steps; i++) {
+            blocks.push({
+                x: staircaseX + i * stepSize,  // Moves right
+                y: staircaseY - i * stepSize,  // Moves up
+                width: stepSize,
+                height: stepSize
+            });
+        }
+
+        function drawBlocks() {
+            for (let i = 0; i < blocks.length; i++) {
+                const block = blocks[i];
+                ctx.drawImage(blockImg, block.x - camera.x, block.y, block.width, block.height);
+            }
+        }
+
+        function checkBlockCollisions() {
+            for (let i = 0; i < blocks.length; i++) {
+                const block = blocks[i];
+
+                if (isColliding(player, block)) {
+                    // If the player is falling and lands on a block
+                    if (player.dy > 0 && player.y + player.height - player.dy <= block.y) {
+                        player.y = block.y - player.height; // Land on top
+                        player.dy = 0;
+                        player.grounded = true;
+                    }
+                    // if the player hits a block by the sides
+                    if (player.dx > 0 && player.x + player.width - player.dx <= block.x) {
+                        player.x = block.x - player.width; //sides uwu
+                        player.dx = 0;
+                    }
+                    if (player.dx < 0 && player.x - player.dx >= block.x + block.width) {
+                        player.x = block.x + block.width; // Stop the player at the block
+                        player.dx = 0;
+                    }
+                    //underblock undertale reference
+                    if (player.dy < 0 && player.y - player.dy <= block.y + block.height &&
+                        player.x + player.width > block.x && player.x < block.x + block.width) {
+                        player.y = block.y + block.height; // Push player down to prevent clipping
+                        player.dy = 0; // Stop upward movement
+                    }
+                }
+            }
+        }
+
+
+        const groundImg = new Image();
+        groundImg.src = "asssets/ground.png";
+
+        // Update ground for scrolling
+        function drawGround() {
+            let tileWidth = 32; 
+            for (let x = -camera.x % tileWidth; x < canvas.width; x += tileWidth) {
+                ctx.drawImage(groundImg, x, canvas.height - 32, tileWidth, 32);
+            }
+        }
+
+
+
+        const ground = {
+            x: 0,
+            y: canvas.height - 50,
+            width: canvas.width,
+            height: 50,
+            image: groundImg,
+        };
+
+        //cutscenes
+        function checkFlagpoleTrigger() {
+            if (player.x > 9300 && !preFlagpoleTriggered) { 
+                alert("damn did the Sonic Forces designers make this or sum shi");
+                preFlagpoleTriggered = true; 
+                cutsceneActive = true
+            }
+
+            if (player.x > 9302 && !mxTriggered) { 
+                alert(">:O HEY!! I WORKED WEAWY HAWD ON DIS!! >:c");
+                mxTriggered = true;
+                cutsceneActive = true
+            }
+        }
+        let halfwayTriggered = false;
+        let findMeTimeout = null; // Global timeout reference
+
+        function checkHalfwayTrigger() {
+            if (player.x > 5000 && !halfwayTriggered && !chaseStarted) { // Adjust position as needed
+                halfwayTriggered = true;
+                triggerFindMeCutscene();
+            }
+        }
+        function triggerFindMeCutscene() {
+            if (isCutsceneActive) return; // Prevent multiple triggers
+            isCutsceneActive = true;
+            
+            console.log("Find Me Cutscene Triggered!");
+
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            let mxImg = new Image();
+            mxImg.src = "asssets/image.png"; 
+
+            mxImg.onload = () => {
+                ctx.drawImage(mxImg, canvas.width / 2 - 50, canvas.height / 2 - 100, 100, 200);
+            };
+
+            // Clear existing alerts
+            clearTimeout(findMeTimeout);
+
+            findMeTimeout = setTimeout(() => {
+                alert("find me :3");
+
+                setTimeout(() => {
+                    console.log("Cutscene ended");
+                    isCutsceneActive = false;
+                }, 2000);
+            }, 2000);
+
+            document.getElementById("gameCanvas").style.backgroundColor = "black";
+        }
+
+
+        //anti crash uwu
+        let chaseStarted = false;
+        let preFlagpoleTriggered = false;
+        let mxTriggered = false;
+        let flagpoleTriggered = false
+
+        //loongi asset
+        const loongiv2 = new Image()
+        loongiv2.src = "asssets/Untitled.png"
+
+        const mx = new Image()
+        mx.src = "asssets/image.png"
+
+        // Player properties 
+        //ok shits done lmfao
+        const player = {
+            x: 100,
+            y: canvas.height - 300, // Ground level
+            width: 64,
+            height: 128,
+            speed: 5,
+            dx: 0,
+            dy: 0,
+            gravity: 0.5,
+            jumpStrength: -12,
+            grounded: true,
+            image: loongiv2,
+        };
+        // Testing powerups (this was in early development and i removed it afterwards since it was useless lel)
+        /*const powerup =  {
+            x: 300,
+            y: canvas.height - 70,
+            height: 32,
+            width: 64,
+        }*/
+         // Mx
+        const mgx =  {
+            x: 9800,
+            y: canvas.height - 240,
+            height: 200,
+            width: 100,
+            image: mx,
+            speed: 8,
+            dx:0,
+            dy:0,
+        }
+        // Keyboard input
+        //add e to sprint
+        const keys = {
+            right: false,
+            left: false,
+            space: false,
+            sprint: false,
+        };
+
+        window.addEventListener("keydown", (e) => {
+            if (e.key === "d" || e.key === "D") keys.right = true;
+            if (e.key === "a" || e.key === "A") keys.left = true;
+            if (e.key === "w" || e.key === "W") keys.up = true;
+            if (e.key === "s" || e.key === "S") keys.down = true;
+            if (e.key === "e" || e.key === "E") keys.sprint = true;
+        });
+
+        window.addEventListener("keyup", (e) => {
+            if (e.key === "d" || e.key === "D") keys.right = false;
+            if (e.key === "a" || e.key === "A") keys.left = false;
+            if (e.key === "w" || e.key === "W") keys.up = false;
+            if (e.key === "s" || e.key === "S") keys.down = false;
+            if (e.key === "e" || e.key === "E") keys.sprint = false;
+        });
+        // Make MX chase the player properly
+        function updateMX() {
+            if (!chaseStarted) return; // Stop MX from moving before the chase
+            let dx = player.x - mgx.x; // Distance between MX and player
+
+            // Move MX toward the player
+            if (Math.abs(dx) > 5) { // Only move if not too close
+                mgx.x += dx > 0 ? mgx.speed : -mgx.speed;
+            }
+
+            // Collision detection with player
+            if (isColliding(player, mgx)) {
+                if(player.dy > 0 && player.y + player.height - player.dy <= mgx.y) {
+                    player.y = mgx.y - player.height;
+                    player.dy = -8; // Bounce up
+                    //stun him
+                    mgx.dx = 0
+                    mgx.height = 100
+                    setTimeout(() => {
+                        mgx.height = 200;
+                        if (Math.abs(dx) > 5) { // Only move if not too close
+                            mgx.x += dx > 0 ? mgx.speed : -mgx.speed;
+                        }
+                    }, 2000)
+                } else {
+                    let response = prompt("Boo! did i scare u?? if so im sowwy <3 -ugwy mx\n\n(Type 'yes' or 'no')\n\n if you make a choice then go to another tab, then come back to respawn");
+                
+                    if (response && response.toLowerCase() === "no") {
+                        alert(">:c meanie...");
+                        location.reload(); // Restart game after message
+                        
+                    } else if (response && response.toLowerCase() === "yes") {
+                        alert("YAY!! im so sowwy tho <3");
+                        location.reload(); // Restart game after message
+                    } else if (response && response.toLowerCase() === "wario is really cool") {
+                        alert("ya ikr?? but im still sowwy for jumpscawing u <3")
+                        location.reload(); // Restart game after message
+                    } else if (response && response.toLowerCase() === "kasane teto"){
+                        alert("kasane teto easter egg unlocked!! OwO")
+                        location.reload(); // Restart game after message
+                    } else if (response && (response.toLowerCase().includes("will you marry me") || response.toLowerCase().includes("marry me"))) {
+                        alert("OMG YAY FINALLY SOMEONE TALKS TO ME YES I WILL - ugwy mx")
+                        window.location.href = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"; // Rickroll
+                    } else if (response && response.toLowerCase() === "this is so hard") {
+                        alert("thats what she said")
+                        window.location.reload()
+                    }
+            
+                    else {
+                        alert("YAY!! im so sowwy tho <3");
+                        location.reload(); // Restart game after message
+                    }
+                }
+            }
+        }
+
+        // Collision detection function
+        function isColliding(a, b) {
+            return (
+                a.x < b.x + b.width &&
+                a.x + a.width > b.x &&
+                a.y < b.y + b.height &&
+                a.y + a.height > b.y
+            );
+        }
+        // Update player position based on input
+        // e to sprint baby
+        let cutsceneActive =false
+        function updatePlayer() {
+            //cutscene glitch fixed baybee
+            if (cutsceneActive) {
+                player.dx = 0;
+                return; // Stop player movement if cutscene is active
+            }
+            // Horizontal movement
+            if (keys.right) player.dx = player.speed;
+            else if (keys.left) player.dx = -player.speed;
+            else player.dx = 0;
+            
+
+            // Vertical movement (gravity and jumping)
+            if (keys.up && player.grounded) {
+                player.dy = player.jumpStrength;
+                player.grounded = false;
+            }
+            player.dy += player.gravity;
+
+            player.x += player.dx;
+            player.y += player.dy;
+
+            // Ground collision detection
+            if (player.y > canvas.height - 32 - player.height) {
+                player.y = canvas.height - 32 - player.height;
+                player.dy = 0;
+                player.grounded = true;
+            }
+            //crouching
+            if (keys.down) {
+                player.height = 32;
+                player.speed = 2.5;
+                player.y = canvas.height - 60
+            } else {
+                player.height = 128;
+                player.speed = 5;
+            }
+            //sprinting is here baybee
+            if(keys.sprint) {
+                player.speed = 10
+            } else {
+                player.speed = 5
+            }
+        }
+        // Update camera position based on player movement
+        function updateCamera() {
+            // Set the camera to follow the player, but prevent scrolling past the level boundaries
+            if (player.x > camera.x + canvas.width * 0.75) { // Player is near the right side of the screen
+                camera.x = Math.min(player.x - canvas.width * 0.75, levelWidth - canvas.width);
+            } else if (player.x < camera.x + canvas.width * 0.25) { // Player is near the left side of the screen
+                camera.x = Math.max(player.x - canvas.width * 0.25, 0);
+            }
+        }
+        // Adjust player drawing to camera
+        function drawPlayer() {
+            ctx.drawImage(player.image, player.x - camera.x, player.y, player.width, player.height);
+        }
+
+        // you beat the game uwu
+        if (player.x < 10 && chaseStarted) {
+            window.location.href = win.html
+        }
+
+        function drawMx() {
+            ctx.drawImage(mgx.image, mgx.x - camera.x, mgx.y, mgx.width, mgx.height);
+        }
+        // chase sequence UwU
+        function startChase() {
+            chaseStarted = true;
+            cutsceneActive = false; // Ensure the player can move again
+            
+            //Reset movement keys so old inputs don't carry over
+            keys.right = false;
+            keys.left = false;
+            keys.up = false;
+            keys.down = false;
+            keys.sprint = false;
+
+            //Stop the player's movement immediately
+            player.dx = 0;
+            player.dy = 0;
+        }
+
+        let isCutsceneActive = false
+        // Game loop
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+            updatePlayer();
+            drawPlayer();
+            updateMX()
+            drawMx()
+            updateCamera()
+            drawGround()
+            checkFlagpoleTrigger()
+            drawBlocks()
+            checkBlockCollisions()
+            drawMemes(ctx)
+            checkMemeCollisions()
+            if (player.x < 10 && chaseStarted) {
+                window.location.href = "win.html"
+            }
+            if (player.x > 5000 && !isCutsceneActive && !chaseStarted) {
+                triggerFindMeCutscene()
+            }
+            if (!isCutsceneActive) {
+                checkHalfwayTrigger();
+            }
+
+            if (player.x > 9303 && !flagpoleTriggered) { 
+                alert("nope nope nope nope so much nope");
+                cutsceneActive = false
+                flagpoleTriggered = true;
+                if (!chaseStarted) {
+                    startChase(); 
+                }
+            }
+            requestAnimationFrame(gameLoop); // Keep the game loop running
+        }
+
+        gameLoop(); // Start the game loop
+    </script>
+</body>
+</html>
